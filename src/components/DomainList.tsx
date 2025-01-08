@@ -11,7 +11,8 @@ import {
 } from '@chakra-ui/react';
 import { FaTrash, FaStar } from 'react-icons/fa';
 import { SkeletonCircle, SkeletonText } from './ui/skeleton';
-import { BiSolidEdit } from "react-icons/bi";
+import { BiSolidEdit } from 'react-icons/bi';
+
 interface DomainListProps {
   domains: { domain: string; isAvailable: boolean }[];
   newDomains?: string[];
@@ -29,7 +30,6 @@ export const DomainList = ({
 }: DomainListProps) => {
   return (
     <VStack align="stretch" gap={4}>
-        
       {domains.map(({ domain, isAvailable }) => (
         <HStack
           key={domain}
@@ -67,14 +67,13 @@ export const DomainList = ({
               onClick={() => onDeleteDomain(domain)}
               size="sm"
               variant="surface"
-              color={"red.500"}
+              color="red.500"
             >
               <FaTrash />
             </IconButton>
           </HStack>
         </HStack>
       ))}
-
       {newDomains.map((domain) => (
         <HStack
           key={domain}

@@ -7,7 +7,6 @@ interface ButtonsProps {
   numDomainsRequired: number;
   onClearCart: () => void;
   onRemoveUnavailable: () => void;
-  onCopyToClipboard: () => void;
   onKeepBestDomains: () => void;
 }
 
@@ -34,39 +33,50 @@ export const Buttons = ({
       justifyContent={{ base: 'center', md: 'space-around' }}
       pb={4}
     >
+      {/* Clear Cart Button */}
       <Button
         onClick={onClearCart}
-        colorScheme="red"
+        colorPalette="red"
         size="sm"
         flex={{ base: '1 1 45%', md: 'none' }}
-        variant={'surface'}
+        variant="surface"
+        fontSize={{ base: 'xs', md: 'sm' }}
       >
         Clear Cart
       </Button>
+
+      {/* Remove Unavailable Button */}
       <Button
         onClick={onRemoveUnavailable}
-        colorScheme="orange"
+        colorPalette="orange"
         size="sm"
         flex={{ base: '1 1 45%', md: 'none' }}
-        variant={'surface'}
+        variant="surface"
+        fontSize={{ base: 'xs', md: 'sm' }}
       >
         Remove Unavailable
       </Button>
+
+      {/* Copy to Clipboard Button */}
       <Button
         onClick={handleCopyToClipboard}
-        colorScheme="blue"
+        colorPalette="blue"
         size="sm"
         flex={{ base: '1 1 45%', md: 'none' }}
-        variant={'surface'}
+        variant="surface"
+        fontSize={{ base: 'xs', md: 'sm' }}
       >
         Copy to Clipboard
       </Button>
+
+      {/* Keep Best Domains Button */}
       <Button
         onClick={onKeepBestDomains}
-        colorScheme="purple"
+        colorPalette="purple"
         size="sm"
         flex={{ base: '1 1 45%', md: 'none' }}
-        variant={'surface'}
+        variant="surface"
+        fontSize={{ base: 'xs', md: 'sm' }}
       >
         Keep Best Domains
       </Button>

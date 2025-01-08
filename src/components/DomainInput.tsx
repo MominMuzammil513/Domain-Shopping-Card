@@ -2,6 +2,8 @@ import { Input, Flex } from '@chakra-ui/react';
 import { useState } from 'react';
 import { toaster } from './ui/toaster';
 import { Button } from './ui/button';
+import { isDomainAvailable } from '@/lib/mockApi';
+import { Tooltip } from '@/components/ui/tooltip';
 
 interface DomainInputProps {
   onAddDomain: (domain: string) => void;
@@ -18,39 +20,29 @@ export const DomainInput = ({
 
   const handleAddDomain = () => {
     const trimmedDomain = domain.trim().toLowerCase();
-
     if (domains.some((d) => d.domain === trimmedDomain)) {
-      toaster.create({
-        title: 'Domain Already Exists',
-        description: 'This domain is already in the list.',
-        type: 'error',
-      });
+      toaster.create({ title: 'Domain Already Exists', type: 'error' });
       return;
     }
-
-    const isValid = /^[a-zA-Z0-9]+\.(com|xyz|app)$/.test(trimmedDomain);
-    if (!isValid) {
-      toaster.create({
-        title: 'Invalid Domain',
-        description: 'Domain must end with .com, .xyz, or .app.',
-        type: 'error',
-      });
+    if (!isDomainAvailable(trimmedDomain)) {
+      toaster.create({ title: 'Invalid Domain', type: 'error' });
       return;
     }
-
     onAddDomain(trimmedDomain);
     setDomain('');
   };
 
   return (
     <Flex gap={2}>
-      <Input
-        placeholder="Enter a domain (e.g., example.com)"
-        value={domain}
-        onChange={(e) => setDomain(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && handleAddDomain()}
-        disabled={loading}
-      />
+      <Tooltip content="Enter a domain ending with .com, .xyz, or .app">
+        <Input
+          placeholder="Enter a domain (e.g., example.com)"
+          value={domain}
+          onChange={(e) => setDomain(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleAddDomain()}
+          disabled={loading}
+        />
+      </Tooltip>
       <Button onClick={handleAddDomain} loading={loading}>
         Add
       </Button>

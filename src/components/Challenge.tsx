@@ -1,40 +1,53 @@
 'use client';
 import { useState, useCallback } from 'react';
-import { Button, VStack } from '@chakra-ui/react';
+import { Button, VStack, useDisclosure } from '@chakra-ui/react';
 import { Buttons } from './Buttons';
-import { isDomainAvailable } from '@/lib/mockApi';
 import { DomainInput } from './DomainInput';
 import { DomainList } from './DomainList';
 import { ProgressIndicator } from './ProgressIndicator';
 import { toaster } from './ui/toaster';
-import { EditDomainModal } from './EditDomainModal ';
+import { EditDomainModal } from '@/components/EditDomainModal ';
+import { isDomainAvailable } from '@/lib/mockApi';
+import { useUndoManager } from '@/components/useUndoManager';
 
 interface ChallengeProps {
   numDomainsRequired: number;
 }
 
 export const Challenge = ({ numDomainsRequired }: ChallengeProps) => {
-  const [domains, setDomains] = useState<
-    { domain: string; isAvailable: boolean }[]
-  >([]);
   const [newDomains, setNewDomains] = useState<string[]>([]);
   const [editingDomain, setEditingDomain] = useState<string | null>(null);
   const [newDomainName, setNewDomainName] = useState('');
+  const { open, onOpen, onClose } = useDisclosure();
+
+  const {
+    current: domains,
+    setCurrent: setDomains,
+    undo,
+    redo,
+  } = useUndoManager([]);
 
   const handleAddDomain = useCallback(
     async (domain: string) => {
       if (
         domains.some((d) => d.domain === domain) ||
         newDomains.includes(domain)
-      )
+      ) {
+        toaster.create({ title: 'Domain Already Exists', type: 'error' });
         return;
+      }
+      if (!isDomainAvailable(domain)) {
+        toaster.create({ title: 'Invalid Domain Format', type: 'error' });
+        return;
+      }
       setNewDomains((prev) => [...prev, domain]);
       try {
         const isAvailable = await isDomainAvailable(domain);
-        setDomains((prev) => [...prev, { domain, isAvailable }]);
+        setDomains([...domains, { domain, isAvailable }]);
+        toaster.create({ title: 'Domain Added', type: 'success' });
       } catch (error) {
         toaster.create({
-          title: 'Error checking domain availability:',
+          title: 'Error Checking Availability',
           description: String(error),
           type: 'error',
         });
@@ -42,58 +55,47 @@ export const Challenge = ({ numDomainsRequired }: ChallengeProps) => {
         setNewDomains((prev) => prev.filter((d) => d !== domain));
       }
     },
-    [domains, newDomains]
+    [domains, newDomains, setDomains]
   );
 
-  const handleDeleteDomain = useCallback((domain: string) => {
-    setDomains((prev) => prev.filter((d) => d.domain !== domain));
-  }, []);
+  const handleDeleteDomain = useCallback(
+    (domain: string) => {
+      setDomains(domains.filter((d) => d.domain !== domain));
+      toaster.create({ title: 'Domain Deleted', type: 'info' });
+    },
+    [domains, setDomains]
+  );
 
   const handleEditDomain = useCallback(
     async (oldDomain: string, newDomain: string) => {
       if (domains.some((d) => d.domain === newDomain)) {
-        toaster.create({
-          title: 'Domain Already Exists',
-          description: 'This domain is already in the list.',
-          type: 'error',
-        });
+        toaster.create({ title: 'Domain Already Exists', type: 'error' });
         return;
       }
-
-      // Validate the new domain format
-      const isValid = /^[a-zA-Z0-9]+\.(com|xyz|app)$/.test(newDomain);
-      if (!isValid) {
-        toaster.create({
-          title: 'Invalid Domain Format',
-          description: 'Domain must end with .com, .xyz, or .app.',
-          type: 'error',
-        });
+      if (!isDomainAvailable(newDomain)) {
+        toaster.create({ title: 'Invalid Domain Format', type: 'error' });
         return;
       }
       const isAvailable = await isDomainAvailable(newDomain);
-      setDomains((prev) =>
-        prev.map((d) =>
+      setDomains(
+        domains.map((d) =>
           d.domain === oldDomain ? { domain: newDomain, isAvailable } : d
         )
       );
-
-      setEditingDomain(null);
-      setNewDomainName('');
-
-      toaster.create({
-        title: 'Domain Updated',
-        description: 'The domain has been successfully updated.',
-        type: 'success',
-      });
+      toaster.create({ title: 'Domain Updated', type: 'success' });
     },
-    [domains]
+    [domains, setDomains]
   );
 
-  const handleClearCart = useCallback(() => setDomains([]), []);
+  const handleClearCart = useCallback(() => {
+    setDomains([]);
+    toaster.create({ title: 'Cart Cleared', type: 'info' });
+  }, [setDomains]);
 
   const handleRemoveUnavailable = useCallback(() => {
-    setDomains((prev) => prev.filter((d) => d.isAvailable));
-  }, []);
+    setDomains(domains.filter((d) => d.isAvailable));
+    toaster.create({ title: 'Unavailable Domains Removed', type: 'info' });
+  }, [domains, setDomains]);
 
   const handleKeepBestDomains = useCallback(() => {
     const availableDomains = domains.filter((d) => d.isAvailable);
@@ -103,27 +105,29 @@ export const Challenge = ({ numDomainsRequired }: ChallengeProps) => {
         '.app': 2,
         '.xyz': 3,
       };
-      const aDomainExtension = a.domain.split('.').pop() || '';
-      const bDomainExtension = b.domain.split('.').pop() || '';
-      const aPriority = priority[aDomainExtension] || 0;
-      const bPriority = priority[bDomainExtension] || 0;
-      if (aPriority !== bPriority) return aPriority - bPriority;
-      return a.domain.length - b.domain.length;
+      const aExt = a.domain.split('.').pop() || '';
+      const bExt = b.domain.split('.').pop() || '';
+      return (
+        (priority[aExt] || 0) - (priority[bExt] || 0) ||
+        a.domain.length - b.domain.length
+      );
     });
     setDomains(sortedDomains.slice(0, numDomainsRequired));
-  }, [domains, numDomainsRequired]);
+    toaster.create({ title: 'Best Domains Kept', type: 'success' });
+  }, [domains, numDomainsRequired, setDomains]);
 
-  const isSuggestedDomain = (domain: string, isAvailable: boolean) => {
-    if (!isAvailable) return false;
-
-    const isShort = domain.length <= 10;
-    const hasCommonExtension = ['.com', '.app', '.xyz'].some((ext) =>
-      domain.endsWith(ext)
-    );
-    const isMemorable = /^[a-zA-Z]+$/.test(domain.split('.')[0]);
-
-    return isShort && hasCommonExtension && isMemorable;
-  };
+  const isSuggestedDomain = useCallback(
+    (domain: string, isAvailable: boolean) => {
+      if (!isAvailable) return false;
+      const isShort = domain.length <= 10;
+      const hasCommonExtension = ['.com', '.app', '.xyz'].some((ext) =>
+        domain.endsWith(ext)
+      );
+      const isMemorable = /^[a-zA-Z]+$/.test(domain.split('.')[0]);
+      return isShort && hasCommonExtension && isMemorable;
+    },
+    []
+  );
 
   return (
     <VStack align="stretch">
@@ -135,13 +139,14 @@ export const Challenge = ({ numDomainsRequired }: ChallengeProps) => {
       <ProgressIndicator
         current={domains.length}
         required={numDomainsRequired}
+        onRedo={redo}
+        onUndo={undo}
       />
       <Buttons
         domains={domains}
         numDomainsRequired={numDomainsRequired}
         onClearCart={handleClearCart}
         onRemoveUnavailable={handleRemoveUnavailable}
-        onCopyToClipboard={() => {}}
         onKeepBestDomains={handleKeepBestDomains}
       />
       <DomainList
@@ -151,24 +156,24 @@ export const Challenge = ({ numDomainsRequired }: ChallengeProps) => {
         onEditDomain={(domain) => {
           setEditingDomain(domain);
           setNewDomainName(domain);
+          onOpen();
         }}
         isSuggestedDomain={isSuggestedDomain}
       />
-      {editingDomain && (
-        <EditDomainModal
-          editingDomain={editingDomain}
-          newDomainName={newDomainName}
-          setNewDomainName={setNewDomainName}
-          setEditingDomain={setEditingDomain}
-          handleEditDomain={handleEditDomain}
-        />
-      )}
+      <EditDomainModal
+        isOpen={open}
+        onClose={onClose}
+        editingDomain={editingDomain}
+        newDomainName={newDomainName}
+        setNewDomainName={setNewDomainName}
+        handleEditDomain={handleEditDomain}
+      />
       <Button
         onClick={() => alert('Domains purchased successfully!')}
         colorScheme="brand"
         disabled={domains.length !== numDomainsRequired}
         size="lg"
-        pos={'sticky'}
+        pos="sticky"
         bottom={1}
       >
         Purchase Domains
