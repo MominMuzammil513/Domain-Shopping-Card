@@ -1,7 +1,6 @@
-'use client';
-
-import { Button, HStack } from '@chakra-ui/react';
+import { HStack } from '@chakra-ui/react';
 import { toaster } from './ui/toaster';
+import { Button } from './ui/button';
 
 interface ButtonsProps {
   domains: { domain: string; isAvailable: boolean }[];
@@ -18,7 +17,6 @@ export const Buttons = ({
   onRemoveUnavailable,
   onKeepBestDomains,
 }: ButtonsProps) => {
-
   const handleCopyToClipboard = () => {
     const domainsText = domains.map((d) => d.domain).join(', ');
     navigator.clipboard.writeText(domainsText);
@@ -30,17 +28,46 @@ export const Buttons = ({
   };
 
   return (
-    <HStack gap={6} flexWrap="wrap">
-      <Button onClick={onClearCart} colorScheme="red" size="sm">
+    <HStack
+      gap={{ base: 2, md: 6 }}
+      flexWrap="wrap"
+      justifyContent={{ base: 'center', md: 'space-around' }}
+      pb={4}
+    >
+      <Button
+        onClick={onClearCart}
+        colorScheme="red"
+        size="sm"
+        flex={{ base: '1 1 45%', md: 'none' }}
+        variant={'surface'}
+      >
         Clear Cart
       </Button>
-      <Button onClick={onRemoveUnavailable} colorScheme="orange" size="sm">
+      <Button
+        onClick={onRemoveUnavailable}
+        colorScheme="orange"
+        size="sm"
+        flex={{ base: '1 1 45%', md: 'none' }}
+        variant={'surface'}
+      >
         Remove Unavailable
       </Button>
-      <Button onClick={handleCopyToClipboard} colorScheme="blue" size="sm">
+      <Button
+        onClick={handleCopyToClipboard}
+        colorScheme="blue"
+        size="sm"
+        flex={{ base: '1 1 45%', md: 'none' }}
+        variant={'surface'}
+      >
         Copy to Clipboard
       </Button>
-      <Button onClick={onKeepBestDomains} colorScheme="purple" size="sm">
+      <Button
+        onClick={onKeepBestDomains}
+        colorScheme="purple"
+        size="sm"
+        flex={{ base: '1 1 45%', md: 'none' }}
+        variant={'surface'}
+      >
         Keep Best Domains
       </Button>
     </HStack>
